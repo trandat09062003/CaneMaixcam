@@ -1,0 +1,11 @@
+id: smartcane
+name: Gay Nguoi Mu
+name[zh]: 智能导盲杖
+version: 1.0.0
+icon: icon.png
+author: SmartCane
+desc: Nhan dien tien polymer VND, doc chu tieng Viet OCR, canh bao vat can sieu am va SOS GPS
+files:
+  - app.yaml
+  - main.py
+  - audio

@@ -1,0 +1,34 @@
+Dạ bọn em chốt làm bên anh ạ.
+Bên em sẽ cọc 50% ( 2.250.000 VNĐ) trên tổng 4.500.000 VNĐ giá trị đơn hàng trước khi triển khai, phần còn lại thanh toán COD khi nhận và kiểm tra sản phẩm.
+Hạn chót hoàn thành và gửi sản phẩm về cho bên em là ngày 24/06/2026.
+Các chức năng yêu cầu phải hoạt động đầy đủ và ổn định khi bàn giao:
+•	Đọc chữ tiếng Việt bằng camera và trả kết quả bằng giọng nói.
+•	Nhận diện tiền giấy Việt Nam và đọc mệnh giá bằng giọng nói.
+•	GPS xác định vị trí hiện tại và gửi tọa độ về telegram
+•	Nút SOS gửi vị trí qua Telegram.
+•	Cảnh báo vật cản bằng cảm biến siêu âm.
+•	Module sim để sự dụng 4G gửi tọa đọa và SOS về telegram khi không có Wifi
+•	Điều chỉnh được nhiều mức cảnh báo khoảng cách.
+•	Hệ thống âm thanh phát thông báo rõ ràng.
+•	Hoạt động bằng pin và có thể sử dụng độc lập.
+Danh sách linh kiện dự kiến:
+•	ESP32-S3 Camera OV2640
+•	Cảm biến SR04T chống nước
+•	GPS NEO-6M hoặc ATGM336H
+•	Loa mini 4Ω 3W
+•	MAX98357A I2S
+•	Pin Li-ion 18650
+•	Mạch sạc TP4056
+•	Module đo pin
+•	LED SOS
+•	Nút nhấn
+•	Module SIM
+•	Dây, jack, công tắc
+(Bên anh có thể thay thế linh kiện tương đương nếu vẫn đảm bảo đầy đủ chức năng và độ ổn định của hệ thống.)
+Ngoài ra bên em mong muốn khi bàn giao:
+•	Bên anh bàn giao linh kiện đi dây hoàn chỉnh không sức không đứt dây
+•	Toàn bộ phần cứng đã được lắp ráp hoàn chỉnh và kiểm thử.
+•	Các chức năng hoạt động ổn định trong điều kiện sử dụng thực tế.
+•	Hệ thống không phát sinh lỗi nghiêm trọng ảnh hưởng đến việc trình diễn và nghiệm thu.
+•	Thiết bị ở trạng thái hoàn thiện, sẵn sàng để bên em lắp lên thân gậy và sử dụng ngay mà không cần chỉnh sửa thêm về phần điện tử, lập trình hoặc kết nối linh kiện.
+•	Cung cấp file code nguồn, sơ đồ đấu nối và hướng dẫn sử dụng cơ bản khi bàn giao.

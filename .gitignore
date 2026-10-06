@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Altium Designer Backup / History / Logs
+History/
+**/History/
+Project Logs for */
+**/Project Logs for */
+*.PrjPcbStructure
+*.DDB
+*.~*
+
+# Temporary calibration / test artifacts
+calib_temp/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -1,0 +1,9 @@
+#pragma once
+
+#define TELEGRAM_BOT_TOKEN  "YOUR_BOT_TOKEN"
+#define TELEGRAM_CHAT_ID    "YOUR_CHAT_ID"
+
+// APN: Viettel v-internet | Vinaphone m3-world | Mobifone m-wap
+#define SIM_APN             "v-internet"
+// Thoi gian cho module 4G khoi dong sau RST (ms)
+#define SIM_BOOT_MS         4000

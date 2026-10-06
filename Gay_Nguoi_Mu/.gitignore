@@ -1,0 +1,26 @@
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+venv/
+.vscode/
+.idea/
+
+# Dataset / archive (upload len Edge Impulse, khong can trong repo)
+dataset*/
+data/raw/
+*.zip
+*.rar
+*.7z
+
+# Build cache Arduino
+build/
+*.elf
+*.bin
+
+# WiFi config local (neu tao file rieng)
+firmware/collect_images/wifi_config.h
+firmware/gay_nguoi_mu_main/config.h
+firmware/esp32_periph/config.h
+firmware/hw_test_s3/config.h
+firmware/hw_test_u3/config.h

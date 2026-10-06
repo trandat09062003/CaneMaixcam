@@ -1,0 +1,114 @@
+================================================================================
+          TỔNG HỢP KẾT NỐI PHẦN CỨNG & HƯỚNG DẪN CÂU DÂY PCB CHI TIẾT
+             DỰ ÁN: GẬY THÔNG MINH CHO NGƯỜI KHIẾM THỊ (MAIXCAM)
+================================================================================
+
+Hệ thống nhúng kết hợp 2 vi điều khiển:
+- U2 / J2: Sipeed MaixCAM (Xử lý AI Camera, nhận diện tiền polymer VND, OCR chữ tiếng Việt)
+- U3:      ESP32 DOIT DEVKIT V1 30 chân (Cảm biến siêu âm, GPS, SIM 4G LTE, Nút SOS, LED)
+
+================================================================================
+1. SƠ ĐỒ CHÂN THỰC TẾ TRÊN MODULE SIPEED MAIXCAM
+================================================================================
+Nhìn thẳng mặt trước bo mạch MaixCAM:
+
+       HÀNG BÊN TRÁI (14 CHÂN)          │         HÀNG BÊN PHẢI (14 CHÂN)
+    -----------------------------------┼------------------------------------
+     1. A17                            │      1. A19   (UART1_TX)
+     2. A16                            │      2. A18   (UART1_RX)
+     3. GND   (Mass / Đất)             │      3. GND   (Mass / Đất)
+     4. A15   (I2C5_SCL / GPIOA15)     │      4. A29   (UART2_RX)
+     5. VOP   (Cực dương Loa +)        │      5. ADC   (Đo Pin - GPIOB3)
+     6. VON   (Cực âm Loa -)           │      6. A28   (UART2_TX)
+     7. A24                            │      7. P18   (I2S_BCLK)
+     8. A23                            │      8. P19   (I2S_LRCLK)
+     9. A27                            │      9. P21
+    10. A25                            │     10. P22
+    11. A22                            │     11. P23
+    12. A26                            │     12. P20   (I2S_DIN / SDO)
+    13. VSYS  (Nguồn hệ thống 5V)      │     13. A14   (Nút nhấn SCAN)
+    14. VBUS  (Nguồn vào 5V)           │     14. 3V3   (Nguồn ra 3.3V)
+    -----------------------------------┴------------------------------------
+    * Chú ý: Cả 2 hàng chân đều có chân số 3 (từ trên xuống) là chân GND (Mass chung).
+
+================================================================================
+2. BẢNG ĐỐI CHIẾU CHI TIẾT ĐỦ 10 DÂY: TỪ MAIXCAM SANG ĐẾ CẮM PCB CŨ
+================================================================================
+⚠️ CẢNH BÁO QUAN TRỌNG:
+- TUYỆT ĐỐI KHÔNG CẮM THẲNG module MaixCAM vào đế cắm PCB cũ vì sơ đồ chân không trùng khớp.
+- Bắt buộc dùng dây câu (jumper / dây hàn) nối từng chân theo đúng bảng dưới đây:
+
++-----+----------------------+----------------------+-----------------------+-------------------------------------------------+
+| STT | TÊN CHÂN MAIXCAM     | VỊ TRÍ TRÊN MAIXCAM  | SỐ CHÂN TRÊN ĐẾ PCB   | TÊN NET TRÊN PCB & CHỨC NĂNG                    |
++-----+----------------------+----------------------+-----------------------+-------------------------------------------------+
+|  1  | 3V3                  | Hàng PHẢI, chân 14 (dưới cùng)| Lỗ số 1               | Net: 3V3 (Nguồn 3.3V cấp cho mạch)              |
+|  2  | GND                  | Hàng PHẢI (hoặc TRÁI), chân 3 | Lỗ số 2               | Net: GND (Mass chung toàn hệ thống)             |
+|  3  | VBUS (hoặc VSYS)     | Hàng TRÁI, chân 14 (hoặc 13)  | Lỗ số 3               | Net: VCC (+5V từ IC nguồn IP5306 nuôi MaixCAM)  |
+|  4  | A14                  | Hàng PHẢI, chân 13            | Lỗ số 4               | Net: BTN_SCAN (Ăn vào nút nhấn chụp tiền/chữ)   |
+|  5  | A15 (hoặc ADC)       | Hàng TRÁI, chân 4 (hoặc PHẢI 5)| Lỗ số 5              | Net: BAT_ADC (Ăn vào cầu phân áp đo dung lượng) |
+|  6  | A18 (UART1_RX)       | Hàng PHẢI, chân 2             | Lỗ số 8               | Net: LINK_RX (Nhận UART từ ESP32 TX2)           |
+|  7  | A19 (UART1_TX)       | Hàng PHẢI, chân 1 (trên cùng) | Lỗ số 9               | Net: LINK_TX (Gửi UART sang ESP32 RX2)          |
+|  8  | P18 (I2S_BCLK)       | Hàng PHẢI, chân 7             | Lỗ số 10              | Net: I2S_BCLK (Xung Bit Clock sang DAC H1)      |
+|  9  | P19 (I2S_LRCLK)      | Hàng PHẢI, chân 8             | Lỗ số 11              | Net: I2S_LRCLK (Xung L/R Word Select sang DAC)  |
+| 10  | P20 (I2S_DIN)        | Hàng PHẢI, chân 12            | Lỗ số 12              | Net: I2S_DIN (Dữ liệu âm thanh I2S sang DAC H1) |
++-----+----------------------+----------------------+-----------------------+-------------------------------------------------+
+
+* CÁC CHÂN CÒN LẠI TRÊN ĐẾ CẮM PCB CŨ (KHÔNG CÓ ĐƯỜNG MẠCH):
+  - Lỗ 6, 7: BỎ TRỐNG
+  - Lỗ 13, 14: BỎ TRỐNG
+  - Toàn bộ hàng đối diện từ Lỗ 15 đến Lỗ 28: BỎ TRỐNG
+
+================================================================================
+3. SƠ ĐỒ HÌNH HỌC TRỰC QUAN ĐỐI CHIẾU (1-1)
+================================================================================
+
+      SIPEED MAIXCAM                                  ĐẾ CẮM TRÊN BO PCB CŨ
+                                            (Nhìn theo đúng ảnh layout Altium bạn gửi)
+   [HÀNG TRÁI]        [HÀNG PHẢI]
+ ┌─────────────┐    ┌─────────────┐                 ┌─────────────┐    ┌─────────────┐
+ │ A17         │    │ A19 (TX)    │ ───────────────┼─────────────┼───►│ Lỗ 9:  TX   │ (Net LINK_TX)
+ │ A16         │    │ A18 (RX)    │ ───────────────┼─────────────┼───►│ Lỗ 8:  RX   │ (Net LINK_RX)
+ │ A15 (ADC)   │    │ A29         │                 │ (Lỗ 15: NC) │    │ Lỗ 14: (NC) │
+ │ VON (Loa-)  │    │ A28         │                 │ (Lỗ 16: NC) │    │ Lỗ 13: (NC) │
+ │ A24         │    │ P18 (BCLK)  │ ───────────────┼─────────────┼───►│ Lỗ 10: BCLK │ (Net I2S_BCLK)
+ │ A23         │    │ P19 (LRCLK) │ ───────────────┼─────────────┼───►│ Lỗ 11: LRCLK│ (Net I2S_LRCLK)
+ │ A27         │    │ P21         │                 │ (Lỗ 17..23) │    │ Lỗ 12: DIN  │ (Net I2S_DIN) ◄─ P20
+ │ A25         │    │ P22         │                 │  ĐỀU BỎ     │    │ Lỗ 7:  (NC) │
+ │ A22         │    │ P23         │                 │  TRỐNG      │    │ Lỗ 6:  (NC) │
+ │ A26         │    │ P20 (DIN)   │ ───────────────┼─────────────┼───►│ Lỗ 12: DIN  │
+ │ VSYS        │    │ A14 (SCAN)  │ ───────────────┼─────────────┼───►│ Lỗ 4:  SCAN │ (Net BTN_SCAN)
+ │ VBUS (5V)   │    │ 3V3         │ ───────────────┼─────────────┼───►│ Lỗ 1:  3V3  │ (Net 3V3)
+ └─────────────┘    └─────────────┘                 │ (Lỗ 24..28) │    │ Lỗ 3:  VCC  │ (Net VCC 5V)  ◄─ VBUS
+   │ (A15)            │ (GND)                       │  ĐỀU BỎ     │    │ Lỗ 2:  GND  │ (Net GND)     ◄─ GND
+   │                  ▼                             │  TRỐNG      │    └─────────────┘
+   │                Lỗ 2 (GND)                      └─────────────┘    [HÀNG BÊN PHẢI]
+   ▼                                                [HÀNG BÊN TRÁI]    (TẤT CẢ 10 DÂY ĐỀU CẮM
+  Lỗ 5 (BAT_ADC)                                    (TẤT CẢ TRỐNG!)     VÀO HÀNG PHẢI NÀY!)
+
+================================================================================
+4. HƯỚNG DẪN KẾT NỐI ÂM THANH (LOA)
+================================================================================
+Có 2 cách kết nối loa tùy theo phần cứng bạn muốn sử dụng:
+
+* CÁCH 1: DÙNG MODULE DAC RỜI MAX98357A (CẮM VÀO GIẮC H1 TRÊN PCB)
+  - Khi bạn đã câu đủ 3 dây I2S (Dây 8: P18, Dây 9: P19, Dây 10: P20) vào Lỗ 10, 11, 12.
+  - Cắm module MAX98357A vào cọc cắm H1 trên bo PCB.
+  - Đấu 2 dây loa vào cổng ra SPK+ và SPK- của module MAX98357A.
+
+* CÁCH 2: DÙNG MẠCH KHUẾCH ĐẠI TÍCH HỢP ONBOARD CỦA MAIXCAM (KHUYÊN DÙNG - GỌN NHẤT)
+  - Dây dương (+) của Loa: Hàn vào điểm tròn pad `VOP` trên bo MaixCAM.
+  - Dây âm (-) của Loa: Hàn vào chân `VON` (hàng bên trái) trên bo MaixCAM.
+  - Với cách này, bạn không cần dùng đến module DAC rời MAX98357A ở giắc H1 nữa.
+
+================================================================================
+5. TỔNG HỢP CÁC NGOẠI VI TRÊN BO PCB KHI CẮM ESP32 (U3)
+================================================================================
+Bo PCB cũ đã đi sẵn toàn bộ đường mạch cho vi điều khiển phụ U3 (ESP32 DOIT DevKit):
+- Cảm biến siêu âm AJ-SR04M (Giắc JP1):  Tự động nối vào GPIO32 (TRIG) và GPIO33 (ECHO)
+- Module SIM 4G LTE A7680C (Giắc H3):   Tự động nối vào GPIO25 (TX_SIM) và GPIO26 (RX_SIM)
+- Module GPS NEO-6M/ATGM336H (Giắc H4): Tự động nối vào GPIO13 (GPS_TX) và GPIO14 (GPS_RX)
+- Nút nhấn khẩn cấp SOS (BT2):           Tự động nối vào GPIO27 (BTN_SOS)
+- Đèn LED báo SOS (L2):                  Tự động nối vào GPIO4 (LED_SOS qua trở 330Ω)
+- Cặp UART LINK nội bộ giữa 2 chip:     Đã nối ngầm từ U3 (RX2/TX2) sang Lỗ 8 & Lỗ 9 của MaixCAM
+- Mạch sạc nguồn IP5306 & Pin 18650:     Cấp nguồn 5V vào chân VIN của ESP32 và Lỗ 3 của MaixCAM
+================================================================================

@@ -1,0 +1,7 @@
+profiles:
+  esp32_devkit:
+    fqbn: esp32:esp32:esp32:UploadSpeed=921600,FlashMode=dio,FlashSize=4M,PartitionScheme=default
+    platforms:
+      - platform: esp32:esp32 (3.3.10)
+
+default_profile: esp32_devkit
