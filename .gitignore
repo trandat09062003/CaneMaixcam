@@ -22,6 +22,7 @@ Project Logs for */
 
 # Temporary calibration / test artifacts
 calib_temp/
+dataset_money_yolo/
 
 # OS / Editor files
 .DS_Store

@@ -130,7 +130,29 @@ def main():
             sftp.put(lpath, rpath)
             p(f"      + Upload Model: {fname} -> {rpath}")
 
-    # Dam bao file vnd_currency.mud tren MaixCAM su dung dung model cvimodel
+    # Dam bao cac file mud tren MaixCAM su dung dung model cvimodel
+    mud_v2_content = f"""[basic]
+type = cvimodel
+model = {REMOTE_MODELS_DIR}/vnd_money_v2.cvimodel
+
+[extra]
+model_type = yolov8
+type = detector
+input_type = rgb
+labels = 10000, 20000, 50000, 100000, 200000, 500000
+mean = 0, 0, 0
+scale = 0.00392156862745098, 0.00392156862745098, 0.00392156862745098
+"""
+    try:
+        with sftp.open(f"{REMOTE_MODELS_DIR}/vnd_money_v2.mud", "w") as f:
+            f.write(mud_v2_content)
+        with sftp.open(f"{REMOTE_MODELS_DIR}/model_9736.mud", "w") as f:
+            f.write(mud_v2_content.replace("vnd_money_v2.cvimodel", "model_9736.cvimodel"))
+        p("      + Da cap nhat mo hinh moi YOLO NPU v2: /root/models/vnd_money_v2.mud")
+    except Exception as e:
+        p(f"      [WARN] Khong the ghi mud v2: {e}")
+
+    # Fallback model cu
     mud_content = f"""[basic]
 type = cvimodel
 model = {REMOTE_MODELS_DIR}/model_9384.cvimodel
@@ -143,12 +165,14 @@ labels = 1000, 10000, 100000, 2000, 20000, 200000, 5000, 50000, 500000
 mean = 0, 0, 0
 scale = 0.00392156862745098, 0.00392156862745098, 0.00392156862745098
 """
-    with sftp.open(f"{REMOTE_MODELS_DIR}/vnd_currency.mud", "w") as f:
-        f.write(mud_content)
-    # Ghi them file model_9384.mud de an toan
-    with sftp.open(f"{REMOTE_MODELS_DIR}/model_9384.mud", "w") as f:
-        f.write(mud_content)
-    p("      + Da cap nhat mo hinh YOLO NPU (Model 9384): /root/models/vnd_currency.mud")
+    try:
+        with sftp.open(f"{REMOTE_MODELS_DIR}/vnd_currency.mud", "w") as f:
+            f.write(mud_content)
+        with sftp.open(f"{REMOTE_MODELS_DIR}/model_9384.mud", "w") as f:
+            f.write(mud_content)
+        p("      + Da cap nhat mo hinh du phong YOLO NPU (Model 9384): /root/models/vnd_currency.mud")
+    except Exception as e:
+        pass
 
 
     p("      Cai dat dich vu tu dong chay khi bat nguon (smartcane.service)...")

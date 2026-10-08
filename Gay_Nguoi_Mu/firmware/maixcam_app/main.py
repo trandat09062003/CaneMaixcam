@@ -451,6 +451,12 @@ def init_npu_detector():
         from maix import nn
         
         mud_candidates = [
+            os.path.join(BASE_DIR, "models", "vnd_money_v2.mud"),
+            os.path.join(BASE_DIR, "models", "model_9736.mud"),
+            "/root/models/vnd_money_v2.mud",
+            "/root/models/model_9736.mud",
+            "/root/maixcam_app/models/vnd_money_v2.mud",
+            "/root/maixcam_app/models/model_9736.mud",
             os.path.join(BASE_DIR, "models", "vnd_currency.mud"),
             os.path.join(BASE_DIR, "models", "model_9384.mud"),
             os.path.join(BASE_DIR, "models", "model_9383.mud"),
