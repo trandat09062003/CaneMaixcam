@@ -452,10 +452,13 @@ def init_npu_detector():
         
         mud_candidates = [
             os.path.join(BASE_DIR, "models", "vnd_money_v2.mud"),
+            os.path.join(BASE_DIR, "models", "model_9769.mud"),
             os.path.join(BASE_DIR, "models", "model_9736.mud"),
             "/root/models/vnd_money_v2.mud",
+            "/root/models/model_9769.mud",
             "/root/models/model_9736.mud",
             "/root/maixcam_app/models/vnd_money_v2.mud",
+            "/root/maixcam_app/models/model_9769.mud",
             "/root/maixcam_app/models/model_9736.mud",
             os.path.join(BASE_DIR, "models", "vnd_currency.mud"),
             os.path.join(BASE_DIR, "models", "model_9384.mud"),
@@ -562,8 +565,11 @@ def init_char_detector():
 
     mud_candidates = [
         os.path.join(BASE_DIR, "models", "char_ocr_v2.mud"),
+        os.path.join(BASE_DIR, "models", "model_9770.mud"),
         "/root/models/char_ocr_v2.mud",
+        "/root/models/model_9770.mud",
         "/root/maixcam_app/models/char_ocr_v2.mud",
+        "/root/maixcam_app/models/model_9770.mud",
         os.path.join(BASE_DIR, "models", "char_ocr.mud"),
         os.path.join(BASE_DIR, "models", "char_yolov5.mud"),
         "/root/maixcam_app/models/char_ocr.mud",
