@@ -1,127 +1,91 @@
-# Gậy Thông Minh Hỗ Trợ Người Khiếm Thị (Smart Cane)
-## Phiên bản nâng cấp: Sipeed MaixCAM Lite + ESP32 DOIT DevKit
+# Tài Liệu Kỹ Thuật Firmware & Triển Khai Gậy Thông Minh
 
-Dự án thiết kế và phát triển hệ thống nhúng thông minh tích hợp trên gậy hỗ trợ người khiếm thị. Phiên bản nâng cấp này thay thế chip xử lý hình ảnh cũ bằng **Sipeed MaixCAM Lite** (xung nhịp 1GHz, tích hợp NPU 1 TOPS chuyên dụng cho Edge AI), giúp nâng cao tốc độ nhận diện tiền tệ và xử lý đọc chữ tiếng Việt (OCR) thời gian thực, đồng thời tối giản hóa mạch phần cứng bằng cách loại bỏ module DAC âm thanh rời.
-
----
-
-## 1. Kiến Trúc Hệ Thống & Phân Chia Tác Vụ
-
-Hệ thống hoạt động dựa trên sự phối hợp của 2 bộ xử lý giao tiếp qua UART nối tiếp (Baudrate: 9600, Khung truyền 8N1):
-
-### Bộ xử lý chính U2: Sipeed MaixCAM Lite (Chạy Linux / MaixPy v3)
-*   **Nhiệm vụ**:
-    *   Thu nhận hình ảnh từ Camera MIPI CSI độ phân giải cao.
-    *   Chạy mô hình AI cục bộ (YOLOv8-nano / MobileNet) trên NPU để nhận diện mệnh giá tiền polymer Việt Nam (VND) không cần Internet.
-    *   Gửi ảnh nén qua kết nối mạng để nhận diện ký tự tiếng Việt (OCR) qua API OCR Space.
-    *   Giải mã âm thanh và trực tiếp phát giọng nói hướng dẫn tiếng Việt ra loa thông qua mạch khuếch đại công suất (PA) tích hợp sẵn trên board (chân phát VOP/VON).
-    *   Giao tiếp với chip ngoại vi U3 qua cổng UART1 (`/dev/ttyS1`).
-*   **Ngoại vi kết nối**: Camera MIPI CSI, Loa mini (4Ω 3W hoặc 1W), Cầu phân áp đo dung lượng pin 18650 (300k/100k kết nối vào chân ADC).
-
-### Vi điều khiển ngoại vi U3: ESP32 DOIT DevKit V1 (Chạy Arduino C++)
-*   **Nhiệm vụ**:
-    *   Quét cảm biến siêu âm liên tục để cảnh báo khoảng cách vật cản phía trước gậy.
-    *   Đọc và cập nhật dữ liệu tọa độ định vị từ module GPS.
-    *   Quản lý module SIM 4G LTE để thực hiện gửi dữ liệu cứu hộ (tọa độ GPS, tin nhắn khẩn cấp) lên Telegram khi mất kết nối WiFi.
-    *   Giám sát nút nhấn khẩn cấp SOS, nút OCR độc lập và điều khiển LED cảnh báo.
-*   **Ngoại vi kết nối**: Cảm biến siêu âm chống nước AJ-SR04M, Module GPS NEO-6M (hoặc ATGM336H), Module SIM 4G LTE A7680C, Nút nhấn SOS, Nút nhấn OCR, LED SOS.
+Tài liệu hướng dẫn chi tiết dành cho phần mềm nhúng chạy trên **Sipeed MaixCAM Lite** và **ESP32 DOIT DevKit V1**.
 
 ---
 
-## 2. Cấu Trúc Thư Mục Dự Án
+## 1. Phân Bổ Kiến Trúc Firmware
 
-Thư mục dự án được tổ chức đồng bộ và dọn dẹp sạch sẽ như sau:
+```
+[ Camera MIPI CSI ] ──> [ MaixCAM Lite (Sophgo SG2002) ] ──> [ Loa Onboard 4Ω 3W ]
+                             │                      ▲
+                    UART1 TX │ (9600 8N1)  UART1 RX │ (9600 8N1)
+                    (/dev/ttyS1)           (/dev/ttyS1)
+                             ▼                      │
+                        [ ESP32 DOIT DevKit V1 ]
+                             │         │         │
+                             ▼         ▼         ▼
+                        [AJ-SR04M] [NEO-6M] [A7680C 4G]
+```
 
-```text
-gay_nguoi_mu_maixcam/
-├── gaynguoimu/                     # Thư mục thiết kế phần cứng Altium Designer
-│   ├── gaynguoimu.PrjPcb           # File quản lý dự án mạch Altium
-│   ├── Sheet2.SchDoc               # Sơ đồ nguyên lý (Schematic) mạch thiết kế mới
-│   ├── PCB3.PcbDoc                 # Sơ đồ mạch in (PCB Layout) thiết kế mới
-│   └── gaynguoimu.BomDoc           # Danh sách linh kiện của dự án (BOM)
-│
-├── Gay_Nguoi_Mu/                   # Thư mục mã nguồn nhúng của thiết bị
-│   ├── firmware/
-│   │   ├── esp32_periph/           # Mã nguồn C++ cho ESP32 ngoại vi (U3)
-│   │   │   ├── esp32_periph.ino    # File chạy chính của Arduino
-│   │   │   ├── gps_module.h        # Thư viện xử lý GPS
-│   │   │   ├── sim_module.h        # Thư viện điều khiển module SIM qua lệnh AT
-│   │   │   └── pins.h              # Chỉ định ánh xạ chân GPIO của U3
-│   │   │
-│   │   └── maixcam_app/            # Mã nguồn Python chạy trên Sipeed MaixCAM (U2)
-│   │       └── main.py             # Script xử lý AI, UART, ADC và phát âm thanh
-│   │
-│   └── hardware/
-│       └── pins_esp32.h            # File định nghĩa chân phần cứng cho ESP32
-│
-├── summary.txt                     # Sơ đồ nối chân phần cứng duy nhất (Source of Truth)
-└── README.md                       # Hướng dẫn sử dụng và triển khai dự án này
+* **MaixCAM Lite (`maixcam_app/`)**: Đảm nhiệm tác vụ nặng về AI thị giác máy tính và phát âm thanh:
+  * NPU Sophgo SG2002 tăng tốc mô hình `vnd_money_v2.cvimodel` (YOLOv5n nhận diện 6 mệnh giá polymer).
+  * NPU tăng tốc mô hình `char_ocr_v2.cvimodel` (YOLOv5n nhận diện 36 ký tự số và chữ cái).
+  * Xử lý giao tiếp UART1 với ESP32 qua chân A18 (RX), A19 (TX).
+  * Phát trực tiếp file âm thanh `.mp3`/`.wav` tiếng Việt qua tầng công suất PA onboard (VOP/VON) ra loa.
+* **ESP32 (`esp32_periph/`)**: Đảm nhiệm tác vụ I/O thời gian thực và cứu hộ:
+  * Đọc khoảng cách cảm biến siêu âm chống nước AJ-SR04M (ngưỡng 40cm và 80cm).
+  * Đọc tọa độ GPS thời gian thực từ module NEO-6M qua Serial2.
+  * Điều khiển module SIMCom A7680C 4G LTE qua Serial1 bằng tập lệnh AT.
+  * Gửi tọa độ GPS kèm liên kết Google Maps về Telegram khi kích hoạt nút SOS.
+
+---
+
+## 2. Danh Mục Tài Nguyên & File Mô Hình
+
+Toàn bộ file mô hình nhị phân đã biên dịch cho NPU SG2002 được đặt tại thư mục:
+`firmware/maixcam_app/models/`
+
+| Tệp tin | Định dạng | Chức năng |
+| :--- | :--- | :--- |
+| `vnd_money_v2.cvimodel` | CVI INT8 Model | Mô hình nhận diện 6 mệnh giá tiền polymer VND |
+| `vnd_money_v2.mud` | Cấu hình MaixPy | Khai báo nhãn, scale, mean và đường dẫn file cvimodel |
+| `char_ocr_v2.cvimodel` | CVI INT8 Model | Mô hình nhận diện 36 ký tự (0-9, a-z) |
+| `char_ocr_v2.mud` | Cấu hình MaixPy | Khai báo 36 nhãn ký tự cho mô hình OCR offline |
+
+Thư mục âm thanh: `firmware/maixcam_app/audio/` chứa đầy đủ các file âm thanh giọng đọc tiếng Việt phục vụ thông báo trạng thái, đọc kết quả mệnh giá tiền và đọc ký tự/số.
+
+---
+
+## 3. Cấu Hình Dịch Vụ Nền Tự Động Khởi Động (Systemd)
+
+Trên hệ điều hành Linux của MaixCAM, tạo file cấu hình dịch vụ tại `/etc/systemd/system/smartcane.service`:
+
+```ini
+[Unit]
+Description=Smart Cane Firmware Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/maixcam_app
+ExecStart=/usr/bin/python3 /root/maixcam_app/main.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Kích hoạt và chạy dịch vụ:
+```bash
+systemctl daemon-reload
+systemctl enable smartcane.service
+systemctl restart smartcane.service
+```
+
+Xem log hoạt động thời gian thực:
+```bash
+journalctl -u smartcane.service -f
 ```
 
 ---
 
-## 3. Sơ Đồ Đấu Nối Chân Phần Cứng (Pin Mapping)
+## 4. Giao Thức Truyền Tin UART (MaixCAM <-> ESP32)
 
-Để đảm bảo thông tin nhất quán và tránh sai lệch thiết kế, toàn bộ cấu hình kết nối chân của cả 2 vi điều khiển (MaixCAM Lite & ESP32), mạch nguồn IP5306, các kết nối UART và cách nối dây module ngoại vi được tổng hợp chi tiết tại file:
-
-👉 **[summary.txt](file:///C:/Users/Public/Documents/Altium/2026/gay_nguoi_mu_maixcam/summary.txt)**
-
-*Vui lòng tham khảo tệp tin trên khi thực hiện hàn nối linh kiện trên PCB hoặc khi kiểm tra đường mạch.*
-
----
-
-## 4. Hướng Dẫn Nạp Chương Trình & Cấu HÌnh Phần Mềm
-
-### 4.1. Cấu hình và nạp code cho ESP32 ngoại vi (U3)
-1.  Cài đặt phần mềm **Arduino IDE** (khuyên dùng bản 2.x).
-2.  Thêm URL quản lý board ESP32 trong `Preferences`:
-    `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-3.  Vào `Board Manager` tìm kiếm và cài đặt gói cấu hình **esp32** bởi **Espressif** (phiên bản ổn định khuyên dùng: **3.0.x**).
-4.  Mở thư mục `Gay_Nguoi_Mu/firmware/esp32_periph/esp32_periph.ino`.
-5.  Chọn đúng Board là **"ESP32 Dev Module"**, kết nối cáp nạp USB-UART vào mạch, chọn cổng COM tương ứng và bấm **Upload**.
-
-### 4.2. Triển khai code trên Sipeed MaixCAM Lite (U2)
-1.  Kết nối MaixCAM Lite với máy tính qua cổng USB Type-C hoặc kết nối mạng WiFi chung.
-2.  Truy cập vào thiết bị qua SSH (sử dụng MobaXterm hoặc Command Prompt):
-    *   Địa chỉ IP: Kiểm tra IP cấp phát trên Router hoặc qua màn hình hiển thị.
-    *   User: `root` | Password: `root` (hoặc mật khẩu mặc định của NSX).
-3.  Tải thư mục `Gay_Nguoi_Mu/firmware/maixcam_app/` lên thư mục `/root/` của MaixCAM.
-4.  Cài đặt các thư viện Python bổ sung nếu chưa có (ví dụ: `pyserial`, `requests`):
-    `pip install pyserial requests`
-5.  **Cấu hình API Key**:
-    *   Mở file `/root/maixcam_app/main.py` trên thiết bị và điền API Key đăng ký miễn phí từ ocr.space vào biến `OCR_API_KEY`.
-6.  **Cài đặt tự động khởi chạy khi bật nguồn**:
-    *   Tạo file dịch vụ systemd: `/etc/systemd/system/smartcane.service`
-        ```ini
-        [Unit]
-        Description=Smart Cane Main Python Application
-        After=multi-user.target
-
-        [Service]
-        Type=simple
-        WorkingDirectory=/root/maixcam_app
-        ExecStart=/usr/bin/python3 /root/maixcam_app/main.py
-        Restart=always
-        RestartSec=5
-
-        [Install]
-        WantedBy=multi-user.target
-        ```
-    *   Kích hoạt dịch vụ:
-        ```bash
-        systemctl daemon-reload
-        systemctl enable smartcane.service
-        systemctl start smartcane.service
-        ```
-
----
-
-## 5. Hướng Dẫn Vận Hành Thiết Bị
-
-*   **Bật/Tắt nguồn**: Nhấn nút nguồn **BT1** (nối IP5306) một lần để khởi động thiết bị. Để tắt, nhấn giữ nút nguồn 3-5 giây. Nhấn 2 lần nhanh để kiểm tra vạch pin hiển thị qua LED1-LED4 trên mạch.
-*   **Nhận diện mệnh giá tiền**: Nhấn **Nút SOS (BT2)** 1 lần. Camera MaixCAM sẽ chụp ảnh, chạy mô hình học máy cục bộ trên NPU để phân tích và phát âm thanh mệnh giá tiền tìm được ra loa ngay lập tức (Ví dụ: *"Mười nghìn đồng"*, *"Năm mươi nghìn đồng"*...).
-*   **Gửi tín hiệu cứu hộ SOS**: Nhấn **Nút SOS (BT2)** 2 lần nhanh. Thiết bị sẽ kích hoạt đèn LED nhấp nháy liên tục, lấy dữ liệu tọa độ GPS mới nhất từ U3, sau đó gửi tin nhắn khẩn cấp kèm link liên kết Google Maps vị trí của gậy về Telegram của người thân.
-*   **Đọc chữ tài liệu/sách báo**: Nhấn **Nút OCR (BTN_OCR)** 1 lần. Thiết bị sẽ phát âm thanh thông báo bắt đầu chụp, gửi ảnh lên hệ thống đám mây để nhận dạng chữ tiếng Việt, sau đó phát văn bản đọc được ra loa.
-*   **Cảnh báo khoảng cách va chạm**: Cảm biến siêu âm tự động hoạt động liên tục.
-    *   Khoảng cách vật cản **40cm - 80cm**: Loa phát tiếng bíp thưa.
-    *   Khoảng cách vật cản **dưới 40cm**: Loa phát tiếng bíp dồn dập báo hiệu nguy hiểm cần dừng lại ngay.
+* Cấu hình cổng nối tiếp: **Baudrate: 9600**, **Data bits: 8**, **Parity: None**, **Stop bits: 1**.
+* Cú pháp lệnh điều khiển:
+  * `CMD:MONEY\n`: ESP32 yêu cầu MaixCAM kích hoạt camera quét mệnh giá tiền.
+  * `CMD:OCR\n`: ESP32 yêu cầu MaixCAM kích hoạt camera quét đọc chữ/ký tự.
+  * `DIST:<cm>\n`: ESP32 định kỳ gửi khoảng cách vật cản (đơn vị cm).
+  * `STATUS:OK\n`: MaixCAM phản hồi trạng thái hoạt động bình thường.
