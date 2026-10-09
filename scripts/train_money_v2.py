@@ -41,24 +41,24 @@ def main():
 
     print(f"[1/4] File cau hinh dataset: {yaml_file}")
 
-    # 2. Huan luyen voi Ultralytics YOLOv8
-    print("\n[2/4] Khoi dong qua trinh huan luyen YOLOv8n tren dataset tien...")
+    # 2. Huan luyen voi Ultralytics YOLOv5 (yolov5nu.pt de dong nhat 100% voi MaixCAM NPU SG2002)
+    print("\n[2/4] Khoi dong qua trinh huan luyen YOLOv5n tren dataset tien...")
     try:
         from ultralytics import YOLO
     except ImportError:
         print("[LOI] Chua cai dat ultralytics! Chay: pip install ultralytics")
         return False
 
-    # Base pretrained model
-    base_pt = os.path.join(base_dir, "yolov8n.pt")
+    # Base pretrained model YOLOv5n (giong het kien truc cua best.onnx va best_char36.onnx)
+    base_pt = os.path.join(base_dir, "yolov5nu.pt")
     if not os.path.exists(base_pt):
-        base_pt = "yolov8n.pt"
+        base_pt = "yolov5nu.pt"
 
     model = YOLO(base_pt)
 
     # Huan luyen 15 epochs voi batch=32 toi uu toc do CPU
     project_dir = os.path.join(base_dir, "runs", "detect", "runs_money")
-    run_name = "yolov8_money_v2"
+    run_name = "yolov5_money_v2"
 
     results = model.train(
         data=yaml_file,
@@ -80,7 +80,7 @@ def main():
     print(f"\n[THANH CONG] Huan luyen hoan tat! Best weights: {trained_best_pt}")
 
     # 3. Xuat model ra ONNX (opset 11, chuan bi cho MaixHub SG2002 TPU-MLIR)
-    print("\n[3/4] Xuat sang dinh dang ONNX (opset 11, imgsz 320x320)...")
+    print("\n[3/4] Xuat sang dinh dang ONNX (opset 11, imgsz 320x320, YOLOv5n)...")
     trained_model = YOLO(trained_best_pt)
     onnx_exported = trained_model.export(
         format="onnx",
@@ -103,14 +103,14 @@ def main():
     print(f" -> Da luu ONNX tai: {dest_onnx_app}")
     print(f" -> Da luu PyTorch PT tai: {dest_pt_app}")
 
-    # 4. Sinh file cau hinh .mud cho MaixPy
-    print("\n[4/4] Tao file cau hinh vnd_money_v2.mud cho MaixCAM...")
+    # 4. Sinh file cau hinh .mud cho MaixPy (model_type = yolov5)
+    print("\n[4/4] Tao file cau hinh vnd_money_v2.mud cho MaixCAM (model_type=yolov5)...")
     mud_content = """[basic]
 type = cvimodel
 model = vnd_money_v2.cvimodel
 
 [extra]
-model_type = yolov8
+model_type = yolov5
 type = detector
 input_type = rgb
 labels = 10000, 20000, 50000, 100000, 200000, 500000
@@ -134,7 +134,7 @@ scale = 0.00392156862745098, 0.00392156862745098, 0.00392156862745098
     print("1. Truy cap trang web MaixHub: https://maixhub.com/model/convert")
     print("2. Chon phan cung: 'MaixCAM' (Chip Sophgo SG2002 / CV181x)")
     print("3. Tai len file ONNX: " + dest_onnx_root)
-    print("4. Chon dinh dang: YOLOv8 (Input size: 320x320)")
+    print("4. Chon loai model: YOLOv5 (Resolution: 320x320)  <-- DONG NHAT VOI MODEL CHU")
     print("5. Nhan Convert, tai file zip ve may va giai nen.")
     print("6. Doi ten file .cvimodel thanh: 'vnd_money_v2.cvimodel'")
     print("7. Chep file vao thu muc: Gay_Nguoi_Mu/firmware/maixcam_app/models/")

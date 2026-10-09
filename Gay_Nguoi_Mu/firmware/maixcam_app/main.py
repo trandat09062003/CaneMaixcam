@@ -561,6 +561,9 @@ def init_char_detector():
         return True
 
     mud_candidates = [
+        os.path.join(BASE_DIR, "models", "char_ocr_v2.mud"),
+        "/root/models/char_ocr_v2.mud",
+        "/root/maixcam_app/models/char_ocr_v2.mud",
         os.path.join(BASE_DIR, "models", "char_ocr.mud"),
         os.path.join(BASE_DIR, "models", "char_yolov5.mud"),
         "/root/maixcam_app/models/char_ocr.mud",
@@ -602,17 +605,45 @@ def init_char_detector():
                 return False
 
             os.chdir(mud_dir)
-            char_npu_detector = nn.YOLOv5(model=valid_mud, dual_buff=False)
-            char_npu_active = True
-            print(f"[CHAR NPU] >>> LOAD THANH CONG YOLOV5 KY TU (36 CLASSES) TU {valid_mud}! <<<")
-            return True
+
+            # Doc model_type tu file mud (yolov5 hoac yolov8)
+            detected_type = "yolov5"
+            try:
+                with open(valid_mud, "r", encoding="utf-8") as mf:
+                    for line in mf:
+                        if "model_type" in line and "=" in line:
+                            detected_type = line.split("=")[1].strip().lower()
+                            break
+            except Exception:
+                pass
+
+            char_npu_detector = None
+            if "yolov8" in detected_type:
+                try:
+                    char_npu_detector = nn.YOLOv8(model=valid_mud, dual_buff=False)
+                    print(f"[CHAR NPU] >>> LOAD THANH CONG YOLOV8 KY TU TU {valid_mud}! <<<")
+                except Exception as e_v8:
+                    print(f"[CHAR NPU] YOLOv8 loi ({e_v8}), thu fallback YOLOv5...")
+                    char_npu_detector = nn.YOLOv5(model=valid_mud, dual_buff=False)
+                    print(f"[CHAR NPU] >>> LOAD THANH CONG YOLOV5 KY TU! <<<")
+            else:
+                try:
+                    char_npu_detector = nn.YOLOv5(model=valid_mud, dual_buff=False)
+                    print(f"[CHAR NPU] >>> LOAD THANH CONG YOLOV5 KY TU TU {valid_mud}! <<<")
+                except Exception as e_v5:
+                    print(f"[CHAR NPU] YOLOv5 loi ({e_v5}), thu fallback YOLOv8...")
+                    char_npu_detector = nn.YOLOv8(model=valid_mud, dual_buff=False)
+                    print(f"[CHAR NPU] >>> LOAD THANH CONG YOLOV8 KY TU! <<<")
+
+            if char_npu_detector is not None:
+                char_npu_active = True
+                return True
         except Exception as e:
-            print(f"[CHAR NPU] Loi khoi dong model YOLOv5 ky tu: {e}")
+            print(f"[CHAR NPU] Loi khoi dong model ky tu: {e}")
     else:
         print("[CHAR NPU] Chua tim thay file char_ocr.mud tren thiet bi.")
 
     char_npu_active = False
-
     return False
 
 def extract_text_from_yolo_detections(objs, labels=None):

@@ -3,7 +3,7 @@ type = cvimodel
 model = vnd_money_v2.cvimodel
 
 [extra]
-model_type = yolov8
+model_type = yolov5
 type = detector
 input_type = rgb
 labels = 10000, 20000, 50000, 100000, 200000, 500000
