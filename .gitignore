@@ -25,6 +25,11 @@ calib_temp/
 dataset_money_yolo/
 dataset_chars_yolo/
 runs/
+data_old/
+data_new/
+temp_test_models/
+*.tmp
+
 
 # OS / Editor files
 .DS_Store
