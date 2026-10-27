@@ -431,6 +431,24 @@ scan_btn = None
 beeper_running = True
 warn_mode_active = False  # Chế độ cảnh báo: loa kêu liên tục (BT2 nhấn 2 lần từ ESP32)
 
+def is_npu_model_safe_to_load(mud_path, model_type="yolov8"):
+    """
+    Kiểm tra an toàn model trong tiến trình con (subprocess).
+    Nếu runtime C++ của Sophgo SG2002 bị SIGSEGV (signal 11), chỉ tiến trình con bị ngắt,
+    tiến trình chính vẫn sống 100% và chuyển sang chế độ dự phòng mượt mà!
+    """
+    try:
+        mud_dir = os.path.dirname(os.path.abspath(mud_path))
+        test_py = (
+            f"import sys, os; os.chdir(r'{mud_dir}'); from maix import nn; "
+            f"m = nn.YOLOv8(model=r'{mud_path}', dual_buff=False) if 'yolov8' in '{model_type}' else nn.YOLOv5(model=r'{mud_path}', dual_buff=False); "
+            f"sys.exit(0)"
+        )
+        ret = subprocess.run([sys.executable, "-c", test_py], capture_output=True, timeout=3)
+        return ret.returncode == 0
+    except Exception:
+        return False
+
 # ==============================================================================
 # 1. KHỞI TẠO MÔ HÌNH AI NPU DEEP LEARNING (SOPHGO SG2002)
 # ==============================================================================
@@ -512,6 +530,12 @@ def init_npu_detector():
             except Exception:
                 pass
 
+            # Kiểm tra an toàn trước khi nạp để tránh SIGSEGV
+            if not is_npu_model_safe_to_load(valid_mud, detected_type):
+                print(f"[AI NPU] File {valid_mud} gay loi bo nho NPU -> An toan chuyen sang Spectrum CV (30 FPS)!")
+                npu_mode_active = False
+                return False
+
             # Nạp model vào NPU (thử YOLOv8 trước, nếu lỗi fallback sang YOLOv5 hoặc ngược lại)
             ai_npu_detector = None
             if "yolov5" in detected_type:
@@ -558,10 +582,16 @@ CHAR_CLASSES = [
 def init_char_detector():
     """
     Khởi động mô hình YOLOv5 nhận diện 36 ký tự đơn giản (A-Z, 0-9) trên NPU SG2002.
+    Nếu NPU tắt hoặc model không tương thích, tự động fallback an toàn sang Cloud OCR Space!
     """
     global char_npu_detector, char_npu_active
     if char_npu_detector is not None:
         return True
+
+    if not ENABLE_NPU_ACCELERATOR:
+        print("[CHAR NPU] NPU dang tat trong cau hinh -> Dung Cloud OCR Space.")
+        char_npu_active = False
+        return False
 
     mud_candidates = [
         os.path.join(BASE_DIR, "models", "char_ocr_v2.mud"),
@@ -606,13 +636,13 @@ def init_char_detector():
                 pass
 
             if not cvimodel_path or not os.path.exists(cvimodel_path):
-                print(f"[CHAR NPU] Chua co file {cvimodel_path} tren gậy. He thong san sang cho ban nạp model!")
+                print(f"[CHAR NPU] Chua co file {cvimodel_path} tren gậy. Dung Cloud OCR Space!")
                 char_npu_active = False
                 return False
 
             os.chdir(mud_dir)
 
-            # Doc model_type tu file mud (yolov5 hoac yolov8)
+            # Đọc model_type từ file mud (yolov5 hoặc yolov8)
             detected_type = "yolov5"
             try:
                 with open(valid_mud, "r", encoding="utf-8") as mf:
@@ -622,6 +652,12 @@ def init_char_detector():
                             break
             except Exception:
                 pass
+
+            # Kiểm tra an toàn trước khi nạp để tránh SIGSEGV
+            if not is_npu_model_safe_to_load(valid_mud, detected_type):
+                print(f"[CHAR NPU] File {valid_mud} gay loi bo nho NPU -> An toan chuyen sang Cloud OCR Space!")
+                char_npu_active = False
+                return False
 
             char_npu_detector = None
             if "yolov8" in detected_type:
@@ -647,7 +683,7 @@ def init_char_detector():
         except Exception as e:
             print(f"[CHAR NPU] Loi khoi dong model ky tu: {e}")
     else:
-        print("[CHAR NPU] Chua tim thay file char_ocr.mud tren thiet bi.")
+        print("[CHAR NPU] Chua tim thay file char_ocr.mud tren thiet bi -> Dung Cloud OCR Space.")
 
     char_npu_active = False
     return False
